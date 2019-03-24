@@ -1,7 +1,7 @@
 //import 'babel-polyfill';
 
 // Importing the StartNotary Smart Contract ABI (JSON representation of the Smart Contract)
-const StarNotary = artifacts.require('StarNotary.sol');
+const StarNotary = artifacts.require('StarNotary');
 
 var accounts; // List of development accounts provided by Truffle
 var owner; // Global variable use it in the tests cases
@@ -12,29 +12,24 @@ contract('StarNotary', accs => {
   accounts = accs; // Assigning test accounts
   owner = accounts[0]; // Assigning the owner test account
   secondOwner = accounts[1];
-
 });
 
-// Example test case, it will test if the contract is able to return the starName property
-// initialized in the contract constructor
-it('has correct name', async () => {
-  // Making sure the Smart Contract is deployed and getting the instance.
+
+it('can create a Star', async() => {
   let instance = await StarNotary.deployed();
 
-  // Calling the starName property
-  let starName = await instance.starName.call();
-
-  // Assert if the starName property was initialized correctly
-  assert.equal(starName, 'Awesome Udacity Star');
+  // console.log('instance -=----- ', instance);
+  
+  let tokenId = 1;
+  await instance.createStar('My Star!', tokenId, {from: owner});
+  assert.equal(await instance.tokenIdToStarInfo.call(tokenId), 'My Star!');
 });
 
-it('can claim a start and change owners', async () => {
+it('lets secondOwner put up their star for sale', async() => {
   let instance = await StarNotary.deployed();
-  await instance.claimStar({from: owner});
-  assert.equal(await instance.starOwner.call(), owner);
-
-  await instance.claimStar({from: secondOwner});
-  assert.equal(await instance.starOwner.call(), secondOwner);
+  let starId = 2;
+  let starPrice = web3.utils.toWei(".01", "ether");
+  await instance.createStar('awesome star', starId, {from: secondOwner});
+  await instance.putUpForSale(starId, starPrice, {from: secondOwner});
+  assert.equal(await instance.starsForSale.call(starId), starPrice);
 });
-
-
